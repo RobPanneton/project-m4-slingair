@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useHistory } from "react-router-dom";
 import FlightSelect from "./FlightSelect";
 import Form from "./Form";
+import asyncLocalStorage from "../../helpers/asyncLocalStorage";
 
 const initialState = { seat: "", givenName: "", surname: "", email: "" };
 
@@ -44,6 +45,23 @@ const SeatSelect = ({ updateUserReservation }) => {
   const handleSubmit = (ev) => {
     ev.preventDefault();
     if (validateEmail()) {
+      fetch("/flights/reservations", {
+        method: "POST",
+        body: JSON.stringify({ ...formData, flight: flightNumber }),
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          setSubStatus("complete");
+
+          asyncLocalStorage.setItem("id", data.data.id).then(() => {
+            updateUserReservation(data.data);
+            history.push("/confirmed");
+          });
+        });
       // TODO: Send data to the server for validation/submission
       // TODO: if 201, add reservation id (received from server) to localStorage
       // TODO: if 201, redirect to /confirmed (push)
@@ -70,5 +88,4 @@ const SeatSelect = ({ updateUserReservation }) => {
     </>
   );
 };
-
 export default SeatSelect;
